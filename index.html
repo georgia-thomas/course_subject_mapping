@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course to Subject Mapper</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      margin: 0;
+      padding: 30px 20px;
+      background-color: #f4f6f8;
+      color: #333;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    .header h1 {
+      margin: 0 0 8px 0;
+      color: #0077b6;
+      font-size: 2.2rem;
+    }
+    .header p {
+      margin: 0;
+      color: #666;
+    }
+
+    /* Layout */
+    .container {
+      display: flex;
+      max-width: 1050px;
+      margin: 0 auto;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .box label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #0077b6;
+      font-size: 1.1rem;
+    }
+
+    textarea {
+      width: 100%;
+      height: 420px;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 14px;
+      resize: vertical;
+      line-height: 1.4;
+    }
+
+    textarea:focus {
+      outline: 2px solid #0077b6;
+      border-color: transparent;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn {
+      width: 50px;
+      height: 50px;
+      font-size: 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: white;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn-convert { background-color: #0077b6; }
+    .btn-convert:hover { background-color: #005f92; }
+    .btn-clear { background-color: #e63946; }
+    .btn-clear:hover { background-color: #c92a37; }
+
+    /* Modal / Pop-Up Styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .modal {
+      background: #fff;
+      padding: 24px;
+      border-radius: 8px;
+      max-width: 550px;
+      width: 90%;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .modal h2 {
+      margin-top: 0;
+      color: #0077b6;
+      font-size: 1.4rem;
+    }
+
+    .modal-section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0077b6;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      border-bottom: 2px solid #0077b6;
+      padding-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .conflict-item {
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .conflict-item label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #333;
+    }
+
+    .conflict-item select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      background-color: #fff;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn-submit-modal {
+      background-color: #0077b6;
+      color: #fff;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .container { flex-direction: column; }
+      .controls { flex-direction: row; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Course to Subject Mapper</h1>
+    <p>Paste courses on the left. Resolve uncategorized courses and crossover conflicts in the pop-up window.</p>
+  </div>
+
+  <div class="container">
+    <!-- Input Area -->
+    <div class="box">
+      <label for="input-courses">Course Data Here...</label>
+      <textarea id="input-courses" placeholder=""></textarea>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="controls">
+      <button class="btn btn-convert" id="convert-btn" title="Convert Courses">➔</button>
+      <button class="btn btn-clear" id="clear-btn" title="Clear All">✕</button>
+    </div>
+
+    <!-- Output Area -->
+    <div class="box">
+      <label for="output-subjects">Mapped Subjects Here...</label>
+      <textarea id="output-subjects" readonly placeholder=""></textarea>
+    </div>
+  </div>
+
+  <!-- Modal Pop-Up -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <h2>Manual Subject Resolution Required</h2>
+      <p>Please select the correct subject for uncategorized courses and crossover matches:</p>
+      
+      <div id="modal-conflicts-container"></div>
+      
+      <div class="modal-actions">
+        <button class="btn-submit-modal" id="modal-confirm-btn">Apply Selections</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1. CATEGORIES DICTIONARY
+    const CATEGORIES = {
+      "Career Tech Business": [
+        "Culinary Arts", "Auto Maintenance", "Automotive", "Intro Constr Trades", 
+        "Construction", "Vocational Skills", "Electrical Technology", "Heating Vent and A/C"
+      ],
+      "Computer Science": [
+        "Computer Science", "Comp Sci", "Computer Sci", "Comp Science", "Computer", 
+        "Coding", "Computing", "Programming", "Machine", "Cybersecurity", 
+        "Cyber Security", "Prog", "Game Design", "Web Design"
+      ],
+      "Fine and Performing Arts": [
+        "Art", "Music", "Band", "Orchestra", "Drawing", "Media", "Painting", 
+        "Dance", "Performing", "Theater", "Theatre", "Photography", "Sculpter", 
+        "Visual", "Video", "Chorus", "Choir", "Animation", "Illustration", 
+        "Piano", "Vocal", "Ceramic"
+      ],
+      "Health and Physical Education": [
+        "Physical Education", "PE", "P.E.", "Phys Ed", "Phys. Ed.", 
+        "ACE Health & Safety", "Fitness", "Lifeguard", "Sports", "Strength", 
+        "Conditioning", "Health"
+      ],
+      "Language Arts": [
+        "Language Arts", "Lang Arts", "LangArts", "ELA", "ELA-", "Reading", 
+        "English", "Eng", "Writing", "Lang", "Vocabulary", "Spelling", 
+        "Journalism", "ELL", "ESL", "ELD", "ILA"
+      ],
+      "Math": [
+        "Mathematics", "Math", "Geometry", "Geom", "Algebra", "Alg", "Calc", 
+        "Calculus", "Prealg", "Pre-Algebra", "Precalc", "Pre-Calc", "Trig", 
+        "Statistics", "Stat", "Stats"
+      ],
+      "Science": [
+        "Science", "Bio", "Biology", "Chem", "Chemistry", "Earth Science", 
+        "Geol", "Geology", "Life Science", "Physics", "STEM", "STEAM", 
+        "Aerospace", "Anatomy", "Physiology", "Environmental Science", 
+        "Physical Science", "Energy and the Environment", "Forensic Science", 
+        "Medical", "BioMed"
+      ],
+      "Social Studies": [
+        "Social Studies", "Soc Stu", "Social Science", "History", "Hist", 
+        "Government", "Economics", "Psychology", "Geog", "Geography", 
+        "Civics", "Law"
+      ],
+      "World Language": [
+        "Spanish", "Chinese", "French", "Italian", "Latin", "German", 
+        "Mandarin", "World Language", "Foreign Language", "ASL", "American Sign Language"
+      ]
+    };
+
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // 2. MATCHING LOGIC
+    function mapCourseTitle(courseTitle) {
+      const matchedOutputs = [];
+
+      for (const [category, keywords] of Object.entries(CATEGORIES)) {
+        for (const keyword of keywords) {
+          const regex = new RegExp(`\\b${escapeRegExp(keyword)}\\b`, 'i');
+          if (regex.test(courseTitle)) {
+            matchedOutputs.push(category);
+            break; 
+          }
+        }
+      }
+
+      return matchedOutputs;
+    }
+
+    let pendingResults = [];
+
+    // 3. CONVERSION TRIGGER
+    document.getElementById('convert-btn').addEventListener('click', () => {
+      const input = document.getElementById('input-courses').value;
+      const lines = input.split('\n');
+
+      pendingResults = [];
+      const crossoverConflicts = [];
+      const uncategorizedConflicts = [];
+
+      lines.forEach((line, index) => {
+        const course = line.trim();
+        if (!course) {
+          pendingResults.push({ index, course: "", resolvedSubject: "" });
+          return;
+        }
+
+        const categories = mapCourseTitle(course);
+
+        if (categories.length === 1) {
+          pendingResults.push({ index, course, resolvedSubject: categories[0] });
+        } else if (categories.length > 1) {
+          pendingResults.push({ index, course, resolvedSubject: null });
+          crossoverConflicts.push({ index, course, categories });
+        } else {
+          pendingResults.push({ index, course, resolvedSubject: null });
+          uncategorizedConflicts.push({ index, course });
+        }
+      });
+
+      if (crossoverConflicts.length > 0 || uncategorizedConflicts.length > 0) {
+        showConflictModal(crossoverConflicts, uncategorizedConflicts);
+      } else {
+        renderOutput();
+      }
+    });
+
+    // 4. MODAL RESOLUTION
+    function showConflictModal(crossovers, uncategorized) {
+      const container = document.getElementById('modal-conflicts-container');
+      container.innerHTML = '';
+
+      const allSubjectNames = Object.keys(CATEGORIES);
+
+      // Section A: Multi-Category Crossovers (ONLY matched categories, no 'Other')
+      if (crossovers.length > 0) {
+        const header = document.createElement('div');
+        header.className = 'modal-section-title';
+        header.textContent = 'Potential Crossovers (Multiple Matches)';
+        container.appendChild(header);
+
+        crossovers.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'conflict-item';
+
+          const label = document.createElement('label');
+          label.textContent = `Course: "${item.course}"`;
+
+          const select = document.createElement('select');
+          select.dataset.pendingIndex = item.index;
+
+          // Only add matched subject categories
+          item.categories.forEach(category => {
+            const opt = document.createElement('option');
+            opt.value = category;
+            opt.textContent = category;
+            select.appendChild(opt);
+          });
+
+          div.appendChild(label);
+          div.appendChild(select);
+          container.appendChild(div);
+        });
+      }
+
+      // Section B: Uncategorized Courses ('Other' pinned + ALL subjects)
+      if (uncategorized.length > 0) {
+        const header = document.createElement('div');
+        header.className = 'modal-section-title';
+        header.textContent = 'Uncategorized Courses (Select Subject)';
+        container.appendChild(header);
+
+        uncategorized.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'conflict-item';
+
+          const label = document.createElement('label');
+          label.textContent = `Course: "${item.course}"`;
+
+          const select = document.createElement('select');
+          select.dataset.pendingIndex = item.index;
+
+          // Pinned 'Other' option
+          const otherOpt = document.createElement('option');
+          otherOpt.value = 'Other';
+          otherOpt.textContent = 'Other';
+          select.appendChild(otherOpt);
+
+          // All subject options
+          allSubjectNames.forEach(subject => {
+            const opt = document.createElement('option');
+            opt.value = subject;
+            opt.textContent = subject;
+            select.appendChild(opt);
+          });
+
+          div.appendChild(label);
+          div.appendChild(select);
+          container.appendChild(div);
+        });
+      }
+
+      document.getElementById('modal-overlay').classList.add('active');
+    }
+
+    document.getElementById('modal-confirm-btn').addEventListener('click', () => {
+      const selects = document.querySelectorAll('#modal-conflicts-container select');
+      
+      selects.forEach(select => {
+        const idx = parseInt(select.dataset.pendingIndex, 10);
+        pendingResults[idx].resolvedSubject = select.value;
+      });
+
+      document.getElementById('modal-overlay').classList.remove('active');
+      renderOutput();
+    });
+
+    // 5. RENDER OUTPUT & CLEAR
+    function renderOutput() {
+      const outputLines = pendingResults.map(item => item.resolvedSubject);
+      document.getElementById('output-subjects').value = outputLines.join('\n');
+    }
+
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      document.getElementById('input-courses').value = '';
+      document.getElementById('output-subjects').value = '';
+    });
+  </script>
+
+</body>
+</html>
