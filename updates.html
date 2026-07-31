@@ -15,6 +15,7 @@
     .header h1 { margin: 0 0 8px 0; color: #0077b6; font-size: 2.2rem; }
     .header p { margin: 0; color: #666; }
 
+    /* Main Container Layout */
     .container { display: flex; max-width: 1050px; margin: 0 auto; gap: 15px; align-items: center; }
     .box { flex: 1; display: flex; flex-direction: column; }
     .box label { font-weight: 600; margin-bottom: 8px; color: #0077b6; font-size: 1.1rem; }
@@ -42,6 +43,7 @@
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center;
       visibility: hidden; opacity: 0; transition: opacity 0.2s ease, visibility 0.2s ease;
+      z-index: 1000;
     }
     .modal-overlay.active { visibility: visible; opacity: 1; }
     .modal {
@@ -73,22 +75,26 @@
   </div>
 
   <div class="container">
+    <!-- Input Box -->
     <div class="box">
       <label for="input-courses">Course Data Here...</label>
       <textarea id="input-courses" placeholder="Intro to Culinary Arts&#10;Advanced Auto Maintenance & Business&#10;Heating Vent and A/C II&#10;Random Elective 101&#10;something math&#10;geometry&#10;french lit&#10;psychology and math&#10;creative writing"></textarea>
     </div>
 
+    <!-- Action Buttons -->
     <div class="controls">
       <button class="btn btn-convert" id="convert-btn" title="Convert Courses">➔</button>
       <button class="btn btn-clear" id="clear-btn" title="Clear All">✕</button>
     </div>
 
+    <!-- Output Box -->
     <div class="box">
       <label for="output-subjects">Mapped Subjects Here...</label>
       <textarea id="output-subjects" readonly placeholder="Mapped subjects will appear here..."></textarea>
     </div>
   </div>
 
+  <!-- Resolution Modal -->
   <div class="modal-overlay" id="modal-overlay">
     <div class="modal">
       <h2>Manual Subject Resolution Required</h2>
@@ -101,44 +107,89 @@
   </div>
 
   <script>
-    // 1. SUPABASE INITIALIZATION (Replace with your actual keys)
-    const SUPABASE_URL = "https://tqisuimtactausojlwxe.supabase.co";;
+    // 1. SUPABASE INITIALIZATION
+    const SUPABASE_URL = "https://tqisuimtactausojlwxe.supabase.co";
     const SUPABASE_KEY = "sb_publishable_lSKhA_rkimitaUDZax0DmA_J8d9QsW5";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let cloudMappings = {}; // Stores mappings downloaded from Supabase
+    let cloudMappings = {}; // In-memory dictionary of user-mapped courses from Supabase
 
-    // Download custom mappings from Supabase when page loads
+    // Safely download custom mappings from Supabase when page loads or runs
     async function fetchCloudMappings() {
-      const { data, error } = await supabase.from('custom_mappings').select('course_title, subject');
-      if (data && !error) {
-        data.forEach(row => {
-          cloudMappings[row.course_title.toLowerCase()] = row.subject;
-        });
+      try {
+        const { data, error } = await supabase.from('custom_mappings').select('course_title, subject');
+        if (data && !error) {
+          data.forEach(row => {
+            if (row.course_title && row.subject) {
+              cloudMappings[row.course_title.trim().toLowerCase()] = row.subject;
+            }
+          });
+        }
+      } catch (err) {
+        console.warn("Notice: Cloud mappings couldn't be loaded, using default rules:", err);
       }
     }
     fetchCloudMappings();
 
     // 2. BASE CATEGORIES DICTIONARY
     const CATEGORIES = {
-      "Career Tech Business": ["Culinary Arts", "Auto Maintenance", "Automotive", "Intro Constr Trades", "Construction", "Vocational Skills", "Electrical Technology", "Heating Vent and A/C"],
-      "Computer Science": ["Computer Science", "Comp Sci", "Computer Sci", "Comp Science", "Computer", "Coding", "Computing", "Programming", "Machine", "Cybersecurity", "Cyber Security", "Prog", "Game Design", "Web Design"],
-      "Fine and Performing Arts": ["Art", "Music", "Band", "Orchestra", "Drawing", "Media", "Painting", "Dance", "Performing", "Theater", "Theatre", "Photography", "Sculpter", "Visual", "Video", "Chorus", "Choir", "Animation", "Illustration", "Piano", "Vocal", "Ceramic"],
-      "Health and Physical Education": ["Physical Education", "PE", "P.E.", "Phys Ed", "Phys. Ed.", "ACE Health & Safety", "Fitness", "Lifeguard", "Sports", "Strength", "Conditioning", "Health"],
-      "Language Arts": ["Language Arts", "Lang Arts", "LangArts", "ELA", "ELA-", "Reading", "English", "Eng", "Writing", "Lang", "Vocabulary", "Spelling", "Journalism", "ELL", "ESL", "ELD", "ILA"],
-      "Math": ["Mathematics", "Math", "Geometry", "Geom", "Algebra", "Alg", "Calc", "Calculus", "Prealg", "Pre-Algebra", "Precalc", "Pre-Calc", "Trig", "Statistics", "Stat", "Stats"],
-      "Science": ["Science", "Bio", "Biology", "Chem", "Chemistry", "Earth Science", "Geol", "Geology", "Life Science", "Physics", "STEM", "STEAM", "Aerospace", "Anatomy", "Physiology", "Environmental Science", "Physical Science", "Energy and the Environment", "Forensic Science", "Medical", "BioMed"],
-      "Social Studies": ["Social Studies", "Soc Stu", "Social Science", "History", "Hist", "Government", "Economics", "Psychology", "Geog", "Geography", "Civics", "Law"],
-      "World Language": ["Spanish", "Chinese", "French", "Italian", "Latin", "German", "Mandarin", "World Language", "Foreign Language", "ASL", "American Sign Language"]
+      "Career Tech Business": [
+        "Culinary Arts", "Auto Maintenance", "Automotive", "Intro Constr Trades", 
+        "Construction", "Vocational Skills", "Electrical Technology", "Heating Vent and A/C"
+      ],
+      "Computer Science": [
+        "Computer Science", "Comp Sci", "Computer Sci", "Comp Science", "Computer", 
+        "Coding", "Computing", "Programming", "Machine", "Cybersecurity", 
+        "Cyber Security", "Prog", "Game Design", "Web Design"
+      ],
+      "Fine and Performing Arts": [
+        "Art", "Music", "Band", "Orchestra", "Drawing", "Media", "Painting", 
+        "Dance", "Performing", "Theater", "Theatre", "Photography", "Sculpter", 
+        "Visual", "Video", "Chorus", "Choir", "Animation", "Illustration", 
+        "Piano", "Vocal", "Ceramic"
+      ],
+      "Health and Physical Education": [
+        "Physical Education", "PE", "P.E.", "Phys Ed", "Phys. Ed.", 
+        "ACE Health & Safety", "Fitness", "Lifeguard", "Sports", "Strength", 
+        "Conditioning", "Health"
+      ],
+      "Language Arts": [
+        "Language Arts", "Lang Arts", "LangArts", "ELA", "ELA-", "Reading", 
+        "English", "Eng", "Writing", "Lang", "Vocabulary", "Spelling", 
+        "Journalism", "ELL", "ESL", "ELD", "ILA"
+      ],
+      "Math": [
+        "Mathematics", "Math", "Geometry", "Geom", "Algebra", "Alg", "Calc", 
+        "Calculus", "Prealg", "Pre-Algebra", "Precalc", "Pre-Calc", "Trig", 
+        "Statistics", "Stat", "Stats"
+      ],
+      "Science": [
+        "Science", "Bio", "Biology", "Chem", "Chemistry", "Earth Science", 
+        "Geol", "Geology", "Life Science", "Physics", "STEM", "STEAM", 
+        "Aerospace", "Anatomy", "Physiology", "Environmental Science", 
+        "Physical Science", "Energy and the Environment", "Forensic Science", 
+        "Medical", "BioMed"
+      ],
+      "Social Studies": [
+        "Social Studies", "Soc Stu", "Social Science", "History", "Hist", 
+        "Government", "Economics", "Psychology", "Geog", "Geography", 
+        "Civics", "Law"
+      ],
+      "World Language": [
+        "Spanish", "Chinese", "French", "Italian", "Latin", "German", 
+        "Mandarin", "World Language", "Foreign Language", "ASL", "American Sign Language"
+      ]
     };
 
     function escapeRegExp(string) {
       return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
+    // 3. MATCHING ENGINE
     function mapCourseTitle(courseTitle) {
-      const lowerCourse = courseTitle.toLowerCase();
-      // Check Supabase custom mappings first!
+      const lowerCourse = courseTitle.trim().toLowerCase();
+      
+      // Check Supabase custom database mappings first!
       if (cloudMappings[lowerCourse]) {
         return [cloudMappings[lowerCourse]];
       }
@@ -149,7 +200,7 @@
           const regex = new RegExp(`\\b${escapeRegExp(keyword)}\\b`, 'i');
           if (regex.test(courseTitle)) {
             matchedOutputs.push(category);
-            break;
+            break; // Stop checking this category once matched
           }
         }
       }
@@ -158,9 +209,9 @@
 
     let pendingResults = [];
 
-    // 3. CONVERT BUTTON CLICK
+    // 4. CONVERT BUTTON LISTENER
     document.getElementById('convert-btn').addEventListener('click', async () => {
-      await fetchCloudMappings(); // Refresh latest database rules
+      await fetchCloudMappings(); // Refresh latest rules from cloud database
       const input = document.getElementById('input-courses').value;
       const lines = input.split('\n');
 
@@ -178,11 +229,14 @@
         const categories = mapCourseTitle(course);
 
         if (categories.length === 1) {
+          // Exactly 1 match
           pendingResults.push({ index, course, resolvedSubject: categories[0] });
         } else if (categories.length > 1) {
+          // Multiple matches (Crossover)
           pendingResults.push({ index, course, resolvedSubject: null });
           crossoverConflicts.push({ index, course, categories });
         } else {
+          // No match (Uncategorized)
           pendingResults.push({ index, course, resolvedSubject: null });
           uncategorizedConflicts.push({ index, course });
         }
@@ -195,12 +249,13 @@
       }
     });
 
-    // 4. MODAL & SAVE TO SUPABASE
+    // 5. MODAL POP-UP BUILDER
     function showConflictModal(crossovers, uncategorized) {
       const container = document.getElementById('modal-conflicts-container');
       container.innerHTML = '';
       const allSubjectNames = Object.keys(CATEGORIES);
 
+      // Section A: Crossover Matches (Only matched options, no 'Other')
       if (crossovers.length > 0) {
         const header = document.createElement('div');
         header.className = 'modal-section-title';
@@ -210,8 +265,10 @@
         crossovers.forEach(item => {
           const div = document.createElement('div');
           div.className = 'conflict-item';
+
           const label = document.createElement('label');
           label.textContent = `Course: "${item.course}"`;
+
           const select = document.createElement('select');
           select.dataset.pendingIndex = item.index;
           select.dataset.courseTitle = item.course;
@@ -229,6 +286,7 @@
         });
       }
 
+      // Section B: Uncategorized Courses ('Other' pinned + ALL subjects)
       if (uncategorized.length > 0) {
         const header = document.createElement('div');
         header.className = 'modal-section-title';
@@ -238,17 +296,21 @@
         uncategorized.forEach(item => {
           const div = document.createElement('div');
           div.className = 'conflict-item';
+
           const label = document.createElement('label');
           label.textContent = `Course: "${item.course}"`;
+
           const select = document.createElement('select');
           select.dataset.pendingIndex = item.index;
           select.dataset.courseTitle = item.course;
 
+          // Pinned 'Other' option
           const otherOpt = document.createElement('option');
           otherOpt.value = 'Other';
           otherOpt.textContent = 'Other';
           select.appendChild(otherOpt);
 
+          // All standard subjects
           allSubjectNames.forEach(subject => {
             const opt = document.createElement('option');
             opt.value = subject;
@@ -265,6 +327,7 @@
       document.getElementById('modal-overlay').classList.add('active');
     }
 
+    // 6. SAVE & APPLY RESOLUTIONS TO SUPABASE
     document.getElementById('modal-confirm-btn').addEventListener('click', async () => {
       const selects = document.querySelectorAll('#modal-conflicts-container select');
       const newMappingsToSave = [];
@@ -275,23 +338,33 @@
         const chosenSubject = select.value;
 
         pendingResults[idx].resolvedSubject = chosenSubject;
-        cloudMappings[courseTitle.toLowerCase()] = chosenSubject; // Update local memory
+        
+        // Save to in-memory cache
+        cloudMappings[courseTitle.trim().toLowerCase()] = chosenSubject;
 
         newMappingsToSave.push({
-          course_title: courseTitle,
+          course_title: courseTitle.trim(),
           subject: chosenSubject
         });
       });
 
-      // Write newly resolved mappings to Supabase cloud database
+      // Write new choices directly into Supabase database table
       if (newMappingsToSave.length > 0) {
-        await supabase.from('custom_mappings').insert(newMappingsToSave);
+        try {
+          const { error } = await supabase.from('custom_mappings').insert(newMappingsToSave);
+          if (error) {
+            console.error("Supabase insert error:", error);
+          }
+        } catch (err) {
+          console.error("Failed to post custom mappings to Supabase:", err);
+        }
       }
 
       document.getElementById('modal-overlay').classList.remove('active');
       renderOutput();
     });
 
+    // 7. RENDER & CLEAR
     function renderOutput() {
       const outputLines = pendingResults.map(item => item.resolvedSubject);
       document.getElementById('output-subjects').value = outputLines.join('\n');
