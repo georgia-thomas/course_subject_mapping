@@ -9,57 +9,188 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { margin: 0; padding: 30px 20px; background-color: #f4f6f8; color: #333; }
-    .header { text-align: center; margin-bottom: 25px; }
-    .header h1 { margin: 0 0 8px 0; color: #0077b6; font-size: 2.2rem; }
-    .header p { margin: 0; color: #666; }
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      margin: 0;
+      padding: 30px 20px;
+      background-color: #f4f6f8;
+      color: #333;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    .header h1 {
+      margin: 0 0 8px 0;
+      color: #0077b6;
+      font-size: 2.2rem;
+    }
+    .header p {
+      margin: 0;
+      color: #666;
+    }
 
-    /* Main Container Layout */
-    .container { display: flex; max-width: 1050px; margin: 0 auto; gap: 15px; align-items: center; }
-    .box { flex: 1; display: flex; flex-direction: column; }
-    .box label { font-weight: 600; margin-bottom: 8px; color: #0077b6; font-size: 1.1rem; }
+    /* Layout */
+    .container {
+      display: flex;
+      max-width: 1050px;
+      margin: 0 auto;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .box label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #0077b6;
+      font-size: 1.1rem;
+    }
 
     textarea {
-      width: 100%; height: 420px; padding: 12px; border: 1px solid #ccc;
-      border-radius: 6px; font-family: monospace; font-size: 14px; resize: vertical; line-height: 1.4;
+      width: 100%;
+      height: 420px;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 14px;
+      resize: vertical;
+      line-height: 1.4;
     }
-    textarea:focus { outline: 2px solid #0077b6; border-color: transparent; }
 
-    .controls { display: flex; flex-direction: column; gap: 12px; }
-    .btn {
-      width: 50px; height: 50px; font-size: 20px; border: none; border-radius: 6px;
-      cursor: pointer; color: white; font-weight: bold; display: flex; align-items: center;
-      justify-content: center; transition: background 0.2s, transform 0.1s;
+    textarea:focus {
+      outline: 2px solid #0077b6;
+      border-color: transparent;
     }
-    .btn:active { transform: scale(0.96); }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn {
+      width: 50px;
+      height: 50px;
+      font-size: 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: white;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
     .btn-convert { background-color: #0077b6; }
     .btn-convert:hover { background-color: #005f92; }
     .btn-clear { background-color: #e63946; }
     .btn-clear:hover { background-color: #c92a37; }
 
-    /* Modal Styling */
+    /* Modal / Pop-Up Styling */
     .modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center;
-      visibility: hidden; opacity: 0; transition: opacity 0.2s ease, visibility 0.2s ease;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
       z-index: 1000;
     }
-    .modal-overlay.active { visibility: visible; opacity: 1; }
+
+    .modal-overlay.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
     .modal {
-      background: #fff; padding: 24px; border-radius: 8px; max-width: 550px;
-      width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      background: #fff;
+      padding: 24px;
+      border-radius: 8px;
+      max-width: 550px;
+      width: 90%;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
-    .modal h2 { margin-top: 0; color: #0077b6; font-size: 1.4rem; }
+
+    .modal h2 {
+      margin-top: 0;
+      color: #0077b6;
+      font-size: 1.4rem;
+    }
+
     .modal-section-title {
-      font-size: 1rem; font-weight: 700; color: #0077b6; margin-top: 20px; margin-bottom: 10px;
-      border-bottom: 2px solid #0077b6; padding-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0077b6;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      border-bottom: 2px solid #0077b6;
+      padding-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
-    .conflict-item { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
-    .conflict-item label { display: block; font-weight: 600; margin-bottom: 6px; color: #333; }
-    .conflict-item select { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; background-color: #fff; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-    .btn-submit-modal { background-color: #0077b6; color: #fff; padding: 10px 18px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
+
+    .conflict-item {
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .conflict-item label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #333;
+    }
+
+    .conflict-item select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      background-color: #fff;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn-submit-modal {
+      background-color: #0077b6;
+      color: #fff;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
 
     @media (max-width: 768px) {
       .container { flex-direction: column; }
@@ -75,10 +206,10 @@
   </div>
 
   <div class="container">
-    <!-- Input Box -->
+    <!-- Input Area -->
     <div class="box">
       <label for="input-courses">Course Data Here...</label>
-      <textarea id="input-courses" placeholder="Intro to Culinary Arts&#10;Advanced Auto Maintenance & Business&#10;Heating Vent and A/C II&#10;Random Elective 101&#10;something math&#10;geometry&#10;french lit&#10;psychology and math&#10;creative writing"></textarea>
+      <textarea id="input-courses" placeholder=""></textarea>
     </div>
 
     <!-- Action Buttons -->
@@ -87,21 +218,23 @@
       <button class="btn btn-clear" id="clear-btn" title="Clear All">✕</button>
     </div>
 
-    <!-- Output Box -->
+    <!-- Output Area -->
     <div class="box">
       <label for="output-subjects">Mapped Subjects Here...</label>
-      <textarea id="output-subjects" readonly placeholder="Mapped subjects will appear here..."></textarea>
+      <textarea id="output-subjects" readonly placeholder=""></textarea>
     </div>
   </div>
 
-  <!-- Resolution Modal -->
+  <!-- Modal Pop-Up -->
   <div class="modal-overlay" id="modal-overlay">
     <div class="modal">
       <h2>Manual Subject Resolution Required</h2>
       <p>Please select the correct subject for uncategorized courses and crossover matches:</p>
+      
       <div id="modal-conflicts-container"></div>
+      
       <div class="modal-actions">
-        <button class="btn-submit-modal" id="modal-confirm-btn">Apply & Save Mappings</button>
+        <button class="btn-submit-modal" id="modal-confirm-btn">Apply Selections</button>
       </div>
     </div>
   </div>
@@ -112,9 +245,9 @@
     const SUPABASE_KEY = "sb_publishable_lSKhA_rkimitaUDZax0DmA_J8d9QsW5";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let cloudMappings = {}; // In-memory dictionary of user-mapped courses from Supabase
+    let cloudMappings = {}; // Stores custom mappings downloaded from Supabase
 
-    // Safely download custom mappings from Supabase when page loads or runs
+    // Load custom mappings from Supabase when page loads or before converting
     async function fetchCloudMappings() {
       try {
         const { data, error } = await supabase.from('custom_mappings').select('course_title, subject');
@@ -126,12 +259,12 @@
           });
         }
       } catch (err) {
-        console.warn("Notice: Cloud mappings couldn't be loaded, using default rules:", err);
+        console.warn("Could not reach Supabase, defaulting to standard dictionary:", err);
       }
     }
     fetchCloudMappings();
 
-    // 2. BASE CATEGORIES DICTIONARY
+    // 2. CATEGORIES DICTIONARY
     const CATEGORIES = {
       "Career Tech Business": [
         "Culinary Arts", "Auto Maintenance", "Automotive", "Intro Constr Trades", 
@@ -185,11 +318,11 @@
       return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    // 3. MATCHING ENGINE
+    // 3. MATCHING LOGIC
     function mapCourseTitle(courseTitle) {
       const lowerCourse = courseTitle.trim().toLowerCase();
-      
-      // Check Supabase custom database mappings first!
+
+      // Check database custom mappings first
       if (cloudMappings[lowerCourse]) {
         return [cloudMappings[lowerCourse]];
       }
@@ -200,18 +333,20 @@
           const regex = new RegExp(`\\b${escapeRegExp(keyword)}\\b`, 'i');
           if (regex.test(courseTitle)) {
             matchedOutputs.push(category);
-            break; // Stop checking this category once matched
+            break; 
           }
         }
       }
+
       return matchedOutputs;
     }
 
     let pendingResults = [];
 
-    // 4. CONVERT BUTTON LISTENER
+    // 4. CONVERSION TRIGGER
     document.getElementById('convert-btn').addEventListener('click', async () => {
-      await fetchCloudMappings(); // Refresh latest rules from cloud database
+      await fetchCloudMappings(); // Sync latest database updates before converting
+      
       const input = document.getElementById('input-courses').value;
       const lines = input.split('\n');
 
@@ -229,14 +364,11 @@
         const categories = mapCourseTitle(course);
 
         if (categories.length === 1) {
-          // Exactly 1 match
           pendingResults.push({ index, course, resolvedSubject: categories[0] });
         } else if (categories.length > 1) {
-          // Multiple matches (Crossover)
           pendingResults.push({ index, course, resolvedSubject: null });
           crossoverConflicts.push({ index, course, categories });
         } else {
-          // No match (Uncategorized)
           pendingResults.push({ index, course, resolvedSubject: null });
           uncategorizedConflicts.push({ index, course });
         }
@@ -249,13 +381,14 @@
       }
     });
 
-    // 5. MODAL POP-UP BUILDER
+    // 5. MODAL RESOLUTION
     function showConflictModal(crossovers, uncategorized) {
       const container = document.getElementById('modal-conflicts-container');
       container.innerHTML = '';
+
       const allSubjectNames = Object.keys(CATEGORIES);
 
-      // Section A: Crossover Matches (Only matched options, no 'Other')
+      // Section A: Multi-Category Crossovers (ONLY matched categories, no 'Other')
       if (crossovers.length > 0) {
         const header = document.createElement('div');
         header.className = 'modal-section-title';
@@ -271,7 +404,6 @@
 
           const select = document.createElement('select');
           select.dataset.pendingIndex = item.index;
-          select.dataset.courseTitle = item.course;
 
           item.categories.forEach(category => {
             const opt = document.createElement('option');
@@ -302,7 +434,6 @@
 
           const select = document.createElement('select');
           select.dataset.pendingIndex = item.index;
-          select.dataset.courseTitle = item.course;
 
           // Pinned 'Other' option
           const otherOpt = document.createElement('option');
@@ -310,7 +441,7 @@
           otherOpt.textContent = 'Other';
           select.appendChild(otherOpt);
 
-          // All standard subjects
+          // All subject options
           allSubjectNames.forEach(subject => {
             const opt = document.createElement('option');
             opt.value = subject;
@@ -327,36 +458,36 @@
       document.getElementById('modal-overlay').classList.add('active');
     }
 
-    // 6. SAVE & APPLY RESOLUTIONS TO SUPABASE
+    // 6. APPLY RESOLUTIONS AND SAVE TO SUPABASE
     document.getElementById('modal-confirm-btn').addEventListener('click', async () => {
       const selects = document.querySelectorAll('#modal-conflicts-container select');
       const newMappingsToSave = [];
 
       selects.forEach(select => {
         const idx = parseInt(select.dataset.pendingIndex, 10);
-        const courseTitle = select.dataset.courseTitle;
         const chosenSubject = select.value;
+        const courseName = pendingResults[idx].course;
 
         pendingResults[idx].resolvedSubject = chosenSubject;
         
-        // Save to in-memory cache
-        cloudMappings[courseTitle.trim().toLowerCase()] = chosenSubject;
+        if (courseName) {
+          // Update local memory immediately
+          cloudMappings[courseName.trim().toLowerCase()] = chosenSubject;
 
-        newMappingsToSave.push({
-          course_title: courseTitle.trim(),
-          subject: chosenSubject
-        });
+          // Queue for database insert
+          newMappingsToSave.push({
+            course_title: courseName.trim(),
+            subject: chosenSubject
+          });
+        }
       });
 
-      // Write new choices directly into Supabase database table
+      // Save user choices to Supabase so they are remembered forever
       if (newMappingsToSave.length > 0) {
         try {
-          const { error } = await supabase.from('custom_mappings').insert(newMappingsToSave);
-          if (error) {
-            console.error("Supabase insert error:", error);
-          }
+          await supabase.from('custom_mappings').insert(newMappingsToSave);
         } catch (err) {
-          console.error("Failed to post custom mappings to Supabase:", err);
+          console.warn("Could not save new mappings to Supabase:", err);
         }
       }
 
@@ -364,7 +495,7 @@
       renderOutput();
     });
 
-    // 7. RENDER & CLEAR
+    // 7. RENDER OUTPUT & CLEAR
     function renderOutput() {
       const outputLines = pendingResults.map(item => item.resolvedSubject);
       document.getElementById('output-subjects').value = outputLines.join('\n');
