@@ -250,7 +250,7 @@
     // Load custom mappings from Supabase when page loads or before converting
     async function fetchCloudMappings() {
       try {
-        const { data, error } = await supabase.from('custom_mappings').select('course_title, subject');
+        const { data, error } = await supabase.from('course_mappings').select('course_title, subject');
         if (data && !error) {
           data.forEach(row => {
             if (row.course_title && row.subject) {
@@ -485,7 +485,7 @@
       // Save user choices to Supabase so they are remembered forever
       if (newMappingsToSave.length > 0) {
         try {
-          await supabase.from('custom_mappings').insert(newMappingsToSave);
+          await supabase.from('course_mappings').insert(newMappingsToSave);
         } catch (err) {
           console.warn("Could not save new mappings to Supabase:", err);
         }
