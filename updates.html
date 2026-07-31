@@ -239,19 +239,22 @@
     </div>
   </div>
 
-  <script>
+<script>
     // 1. SUPABASE INITIALIZATION
     const SUPABASE_URL = "https://tqisuimtactausojlwxe.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxaXN1aW10YWN0YXVzb2psd3hlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0MDk5OTksImV4cCI6MjEwMDk4NTk5OX0.tpOSvTgRazgXFN_dIN_2DXbwQrlNMwgyZQXPYw5A5v0";
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
+    // Initialize client instance
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     let cloudMappings = {}; // Stores custom mappings downloaded from Supabase
 
-    // Load custom mappings from Supabase when page loads or before converting
+    // Load custom mappings from Supabase
     async function fetchCloudMappings() {
       try {
         const { data, error } = await supabaseClient.from('custom_mappings').select('course_title, subject');
         if (data && !error) {
+          cloudMappings = {}; // Clear & refresh
           data.forEach(row => {
             if (row.course_title && row.subject) {
               cloudMappings[row.course_title.trim().toLowerCase()] = row.subject;
@@ -262,6 +265,8 @@
         console.warn("Could not reach Supabase, defaulting to standard dictionary:", err);
       }
     }
+    
+    // Initial fetch on page load
     fetchCloudMappings();
 
     // 2. CATEGORIES DICTIONARY
@@ -388,7 +393,7 @@
 
       const allSubjectNames = Object.keys(CATEGORIES);
 
-      // Section A: Multi-Category Crossovers (ONLY matched categories, no 'Other')
+      // Section A: Multi-Category Crossovers
       if (crossovers.length > 0) {
         const header = document.createElement('div');
         header.className = 'modal-section-title';
@@ -418,7 +423,7 @@
         });
       }
 
-      // Section B: Uncategorized Courses ('Other' pinned + ALL subjects)
+      // Section B: Uncategorized Courses
       if (uncategorized.length > 0) {
         const header = document.createElement('div');
         header.className = 'modal-section-title';
@@ -435,13 +440,11 @@
           const select = document.createElement('select');
           select.dataset.pendingIndex = item.index;
 
-          // Pinned 'Other' option
           const otherOpt = document.createElement('option');
           otherOpt.value = 'Other';
           otherOpt.textContent = 'Other';
           select.appendChild(otherOpt);
 
-          // All subject options
           allSubjectNames.forEach(subject => {
             const opt = document.createElement('option');
             opt.value = subject;
@@ -470,7 +473,7 @@
 
         pendingResults[idx].resolvedSubject = chosenSubject;
         
-        if (courseName) {
+        if (courseName && chosenSubject !== 'Other') {
           // Update local memory immediately
           cloudMappings[courseName.trim().toLowerCase()] = chosenSubject;
 
@@ -482,7 +485,7 @@
         }
       });
 
-      // Save user choices to Supabase so they are remembered forever
+      // Save choices to Supabase
       if (newMappingsToSave.length > 0) {
         try {
           await supabaseClient.from('custom_mappings').insert(newMappingsToSave);
