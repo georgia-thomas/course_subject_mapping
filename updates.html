@@ -239,7 +239,7 @@
     </div>
   </div>
 
-<script>
+  <script>
     // 1. SUPABASE INITIALIZATION
     const SUPABASE_URL = "https://tqisuimtactausojlwxe.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxaXN1aW10YWN0YXVzb2psd3hlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0MDk5OTksImV4cCI6MjEwMDk4NTk5OX0.tpOSvTgRazgXFN_dIN_2DXbwQrlNMwgyZQXPYw5A5v0";
@@ -452,8 +452,33 @@
             select.appendChild(opt);
           });
 
+          // Optional checkbox to permanently save mapping rule
+          const checkboxRow = document.createElement('div');
+          checkboxRow.style.marginTop = '8px';
+          checkboxRow.style.display = 'flex';
+          checkboxRow.style.alignItems = 'center';
+          checkboxRow.style.gap = '6px';
+
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.id = `save-db-${item.index}`;
+          checkbox.checked = false; // Default: UNCHECKED
+
+          const checkboxLabel = document.createElement('label');
+          checkboxLabel.htmlFor = `save-db-${item.index}`;
+          checkboxLabel.textContent = 'Save rule permanently to database for future lookups';
+          checkboxLabel.style.fontWeight = 'normal';
+          checkboxLabel.style.fontSize = '0.85rem';
+          checkboxLabel.style.color = '#555';
+          checkboxLabel.style.margin = '0';
+          checkboxLabel.style.cursor = 'pointer';
+
+          checkboxRow.appendChild(checkbox);
+          checkboxRow.appendChild(checkboxLabel);
+
           div.appendChild(label);
           div.appendChild(select);
+          div.appendChild(checkboxRow);
           container.appendChild(div);
         });
       }
@@ -461,7 +486,7 @@
       document.getElementById('modal-overlay').classList.add('active');
     }
 
-    // 6. APPLY RESOLUTIONS AND SAVE TO SUPABASE
+    // 6. APPLY RESOLUTIONS AND SAVE TO SUPABASE (IF CHECKED)
     document.getElementById('modal-confirm-btn').addEventListener('click', async () => {
       const selects = document.querySelectorAll('#modal-conflicts-container select');
       const newMappingsToSave = [];
@@ -471,10 +496,15 @@
         const chosenSubject = select.value;
         const courseName = pendingResults[idx].course;
 
+        // 1. Always update the current output for this run
         pendingResults[idx].resolvedSubject = chosenSubject;
         
-        if (courseName && chosenSubject !== 'Other') {
-          // Update local memory immediately
+        // 2. Check if user explicitly opted in to save permanently
+        const saveCheckbox = document.getElementById(`save-db-${idx}`);
+        const isChecked = saveCheckbox ? saveCheckbox.checked : false;
+
+        if (courseName && chosenSubject !== 'Other' && isChecked) {
+          // Update local memory cache immediately
           cloudMappings[courseName.trim().toLowerCase()] = chosenSubject;
 
           // Queue for database insert
@@ -485,7 +515,7 @@
         }
       });
 
-      // Save choices to Supabase
+      // 3. Insert to Supabase ONLY if at least one checkbox was selected
       if (newMappingsToSave.length > 0) {
         try {
           await supabaseClient.from('custom_mappings').insert(newMappingsToSave);
